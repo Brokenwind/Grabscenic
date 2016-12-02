@@ -2,6 +2,7 @@
 
 import numpy
 import re
+import search
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from pandas import DataFrame,Series
@@ -83,18 +84,119 @@ class Grab:
         return True
 
     def searchSeniceSpiPage(self,num,page):
+        """Search scenics information from a specified page of a specified province
+        # Parameters:
+        num:  the number of a province which you want to grab scenic information
+        page: where now you want to extract scenic information from
+        # Return:
+        """
         addr = "/scenicSearch/"+str(num)+"-0-0-0-0-"+str(page)+".html"
         self.browser.get(self.base+addr)
         page = BeautifulSoup(self.browser.page_source)
         sightTags = page.select("div.sightlist > div.sightshow > div.sightdetail > h4 > a") 
+        link = ""
         if sightTags:
             for item in sightTags:
                 print "got the link of "+item.string
                 link = item.attrs["href"]
-                print link
+                self.extractScenicInfor(link)
         else:
             return False
         return True
+
+    def extractScenicInfor(self,link):
+        """Extract a scenic information with the given scenic address
+        # Parameters:
+        link:  the address where you can get detailed information of scenic
+
+        # Return:
+        """
+        self.extractScenicAbout(link)
+
+    def extractScenicAbout(self,link):
+        """Extract the information of introduction,geographic postion,type,quality,class 
+        # Parameters:
+        link:  the address where you can get detailed information of scenic
+
+        # Return:
+        the return value is a dict which has fowllowing attrs:
+        province: 
+        city:
+        types:
+        level:
+        fits:
+        description:
+        images:
+        """
+        scenic = {}
+        addr = link+"about.html"
+        self.browser.get(addr)
+        about = BeautifulSoup(self.browser.page_source)
+        relative = about.select("div.main > div.wrap > div.pright > div.pfood > ul#RightControl11_ScenicBaseInfo > li")
+        if len(relative) == 5:
+            # get province and city information
+            pos = relative[0].select("a")
+            # It will only be right when we got two extract two infor
+            if len(pos) == 2:
+                scenic["province"] = pos[0].string
+                scenic["city"] = pos[1].string
+            else:
+                return None
+            # get the type of scenic
+            types = []
+            for item in relative[1].select("a"):
+                types.append(item.string)
+            scenic["types"] = types
+            # get the quality of scenic
+            scenic["quality"] = relative[2].find("a").string
+            # get the scenic level
+            scenic["level"] = relative[3].find("a").string
+            # get the fit time of the scenic
+            fits = []
+            for item in relative[4].select("a"):
+                fits.append(item.string)
+            scenic["fits"] = fits
+        else:
+            print "there is not ralative information"+str(len(relative))
+            return None
+        # get the description of the scenic
+        desc = about.find(id="AboutInfo")
+        descText = ""
+        descImg = []
+        """
+        for item in about.find("br"):
+            item.replace_with("\n")
+        """
+        for s in desc.stripped_strings:
+            descText = descText + s
+        ptags = desc.find_all("p")
+        if ptags:
+            for item in ptags:
+                con = item.stripped_strings
+                if con:
+                    for s in con:
+                        descText = descText + "\n" + s
+                img = item.find("img")
+                if img:
+                    descImg.append(self.base+img.attrs["src"])
+        scenic["description"] = descText
+        scenic["images"]=descImg
+        return scenic
+
+    def extractScenicAttractions(self,link):
+        """extract information of attractions of a specified scenic
+        # Parameters:
+        link:  the address where you can get attractions of scenic
+        # Return:
+        The return value is a list which the item is dict,each item contains the following attrs:
+        
+        """
+        attractions = []
+        addr = link+"about.html"
+        self.browser.get(addr)
+        page = BeautifulSoup(self.browser.page_source)
+        lists = page.select("")
+
 if __name__ == "__main__":
     grab = Grab()
-    grab.searchScenic(33)
+    grab.extractScenicAbout("http://scenic.cthy.com/scenic-10046/")
