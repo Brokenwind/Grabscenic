@@ -1,24 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <string-array name="createSql">
+  <string-array id="createSql">
 
-    <item name="seasonCreate">
+    <item id="season">
       CREATE TABLE `season` (
       `seasonID` int(11) NOT NULL,
       `seasonName` varchar(255) NULL,
       PRIMARY KEY (`seasonID`) 
       );
+    </item>
 
-    <item name="sceneryTypeCreate">
+    <item id="sceneryType">
       CREATE TABLE `sceneryType` (
-      `typeID` int(11) NOT NULL AUTO_INCREMENT,
+      `typeID` int(11) NOT NULL,
       `name` varchar(255) NULL,
       `description` varchar(255) NULL,
       PRIMARY KEY (`typeID`) 
       );
     </item>
 
-    <item name="sceneryCreate">
+    <item id="scenery">
       CREATE TABLE `scenery` (
       `sceneryID` varchar(255) NOT NULL,
       `name` varchar(255) NULL,
@@ -37,7 +38,7 @@
       );
     </item>
 
-    <item name="typeRelationCreate">
+    <item id="typeRelation">
       CREATE TABLE `typeRelation` (
       `sceneryID` varchar(255) NOT NULL,
       `typeID` int(11) NOT NULL,
@@ -45,10 +46,10 @@
       );
     </item>
 
-    <item name="sceneryImagesCreate">
+    <item id="sceneryImages">
       CREATE TABLE `sceneryImages` (
       `sceneryID` varchar(255) NOT NULL,
-      `imageID` int(11) NOT NULL AUTO_INCREMENT,
+      `imageID` int(11) NOT NULL,
       `imageUrl` varchar(255) NULL,
       `imageName` varchar(255) NULL,
       `imageDesc` varchar(255) NULL,
@@ -57,7 +58,7 @@
       );
     </item>
 
-    <item name="fitSeasonCreate">
+    <item id="fitSeason">
       CREATE TABLE `fitSeason` (
       `sceneryID` varchar(255) NOT NULL,
       `seasonID` int(11) NOT NULL,
@@ -65,47 +66,53 @@
       );
     </item>
 
-    <item name="outerKeyCreate">
-      ALTER TABLE `scenery` ADD CONSTRAINT `scenery-type` FOREIGN KEY (`sceneryID`) REFERENCES `typeRelation` (`sceneryID`);
-      ALTER TABLE `sceneryType` ADD CONSTRAINT `type-relation` FOREIGN KEY (`typeID`) REFERENCES `typeRelation` (`typeID`);
-      ALTER TABLE `scenery` ADD CONSTRAINT `scenery-images` FOREIGN KEY (`sceneryID`) REFERENCES `sceneryImages` (`sceneryID`);
-      ALTER TABLE `scenery` ADD CONSTRAINT `scenery-season` FOREIGN KEY (`sceneryID`) REFERENCES `fitSeason` (`sceneryID`);
-      ALTER TABLE `season` ADD CONSTRAINT `season-fit` FOREIGN KEY (`seasonID`) REFERENCES `fitSeason` (`seasonID`);
+    <item id="outerKey">
+      ALTER TABLE `typeRelation` ADD CONSTRAINT `relation-type` FOREIGN KEY (`typeID`) REFERENCES `sceneryType` (`typeID`);
+      ALTER TABLE `typeRelation` ADD CONSTRAINT `ralation-scenery` FOREIGN KEY (`sceneryID`) REFERENCES `scenery` (`sceneryID`);
+      ALTER TABLE `fitSeason` ADD CONSTRAINT `fit-season` FOREIGN KEY (`seasonID`) REFERENCES `season` (`seasonID`);
+      ALTER TABLE `fitSeason` ADD CONSTRAINT `fit-scenery` FOREIGN KEY (`sceneryID`) REFERENCES `scenery` (`sceneryID`);
+      ALTER TABLE `sceneryImages` ADD CONSTRAINT `images-scenery` FOREIGN KEY (`sceneryID`) REFERENCES `scenery` (`sceneryID`);
     </item>
   </string-array>
 
-  <string-array name="destroySql">
-    <item>
+  <string-array id="dropSql">
+    <item id="typeRelation">
         DROP TABLE IF EXISTS typeRelation;
     </item>
-    <item>
-        DROP TABLE IF EXISTS fitSeason;
-    </item>
-    <item>
-        DROP TABLE IF EXISTS season;
-    </item>
-    <item>
+    <item id="sceneryType">
         DROP TABLE IF EXISTS sceneryType;
     </item>
-    <item>
+    <item id="fitSeason">
+        DROP TABLE IF EXISTS fitSeason;
+    </item>
+    <item id="season">
+        DROP TABLE IF EXISTS season;
+    </item>
+    <item id="sceneryImages">
+        DROP TABLE IF EXISTS sceneryImages;
+    </item>
+    <item id="scenery">
         DROP TABLE IF EXISTS scenery;
     </item>
   </string-array>
 
-  <string-array name="dataCleanSql">
-    <item>
+  <string-array id="cleanSql">
+    <item id="typeRelation">
         DELETE FROM typeRelation;
     </item>
-    <item>
-        DELETE FROM fitSeason;
-    </item>
-    <item>
-        DELETE FROM season;
-    </item>
-    <item>
+    <item id="sceneryType">
         DELETE FROM sceneryType;
     </item>
-    <item>
+    <item id="fitSeason">
+        DELETE FROM fitSeason;
+    </item>
+    <item id="season">
+        DELETE FROM season;
+    </item>
+    <item id="sceneryImages">
+        DELETE FROM sceneryImages;
+    </item>
+    <item id="scenery">
         DELETE FROM scenery;
     </item>
   </string-array>

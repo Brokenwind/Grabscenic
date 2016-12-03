@@ -48,6 +48,24 @@ class MySQL:
                 raise Exception(error_msg)
         self._cur = self._conn.cursor()
 
+    def execute(self,sql,params=None):
+        """Execute all kinds of sql statement
+        # Parameters:
+        sql: the query sql you want to execute
+        # Return:
+        """
+        try:
+            self._cur.execute("SET NAMES utf8") 
+            if params:
+                result = self._cur.execute(sql,params)
+            else:
+                result = self._cur.execute(sql)
+        except MySQLdb.Error, e:
+            self.error_code = e.args[0]
+            print "database error code:",e.args[0],e.args[1]
+            result = None
+        return result
+
     def query(self,sql,params=None):
         """Execute select without parameter
         # Parameters:
