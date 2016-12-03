@@ -2,7 +2,6 @@
 
 import numpy
 import re
-import search
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from pandas import DataFrame,Series
@@ -169,18 +168,19 @@ class Grab:
         """
         for s in desc.stripped_strings:
             descText = descText + s
-        ptags = desc.find_all("p")
-        if ptags:
-            for item in ptags:
-                con = item.stripped_strings
-                if con:
-                    for s in con:
-                        descText = descText + "\n" + s
-                img = item.find("img")
-                if img:
+        for item in desc.find_all("p"):
+            # if a tag p contains image address,it always has the style or align attr
+            attrs = item.attrs
+            if "style" in attrs.keys() or "align" in attrs.keys():
+                for img in item.find_all("img"):
                     descImg.append(self.base+img.attrs["src"])
+            else:
+                for s in item.stripped_strings:
+                    descText = descText + "\n" + s
+
         scenic["description"] = descText
         scenic["images"]=descImg
+
         return scenic
 
     def extractScenicAttractions(self,link):
@@ -199,4 +199,4 @@ class Grab:
 
 if __name__ == "__main__":
     grab = Grab()
-    grab.extractScenicAbout("http://scenic.cthy.com/scenic-10046/")
+    print grab.extractScenicAbout("http://scenic.cthy.com/scenic-10046/")

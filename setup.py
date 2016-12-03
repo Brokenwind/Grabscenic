@@ -15,6 +15,6 @@ setup(
       license="LGPL",
       packages=find_packages(),
       scripts=["scenic/StartGrab.py"],
-      install_requires=['selenium', 'beautifulsoup4'],
+      install_requires=['selenium', 'beautifulsoup4','MySQLdb'],
       keywords=["spider", "china", "tourism"],
 )

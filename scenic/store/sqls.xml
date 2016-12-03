@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string-array name="createSql">
+
+    <item name="seasonCreate">
+      CREATE TABLE `season` (
+      `seasonID` int(11) NOT NULL,
+      `seasonName` varchar(255) NULL,
+      PRIMARY KEY (`seasonID`) 
+      );
+
+    <item name="sceneryTypeCreate">
+      CREATE TABLE `sceneryType` (
+      `typeID` int(11) NOT NULL AUTO_INCREMENT,
+      `name` varchar(255) NULL,
+      `description` varchar(255) NULL,
+      PRIMARY KEY (`typeID`) 
+      );
+    </item>
+
+    <item name="sceneryCreate">
+      CREATE TABLE `scenery` (
+      `sceneryID` varchar(255) NOT NULL,
+      `name` varchar(255) NULL,
+      `province` varchar(255) NULL,
+      `city` varchar(255) NULL,
+      `area` varchar(255) NULL,
+      `level` varchar(255) NULL,
+      `quality` varchar(255) NULL,
+      `description` text NULL,
+      `website` varchar(512) NULL,
+      `symbolImage` varchar(512) NULL,
+      `openTime` varchar(255) NULL,
+      `closeTime` varchar(255) NULL,
+      `price` decimal(11,2) NULL,
+      PRIMARY KEY (`sceneryID`) 
+      );
+    </item>
+
+    <item name="typeRelationCreate">
+      CREATE TABLE `typeRelation` (
+      `sceneryID` varchar(255) NOT NULL,
+      `typeID` int(11) NOT NULL,
+      PRIMARY KEY (`sceneryID`, `typeID`) 
+      );
+    </item>
+
+    <item name="sceneryImagesCreate">
+      CREATE TABLE `sceneryImages` (
+      `sceneryID` varchar(255) NOT NULL,
+      `imageID` int(11) NOT NULL AUTO_INCREMENT,
+      `imageUrl` varchar(255) NULL,
+      `imageName` varchar(255) NULL,
+      `imageDesc` varchar(255) NULL,
+      `takenTime` timestamp NULL,
+      PRIMARY KEY (`sceneryID`, `imageID`) 
+      );
+    </item>
+
+    <item name="fitSeasonCreate">
+      CREATE TABLE `fitSeason` (
+      `sceneryID` varchar(255) NOT NULL,
+      `seasonID` int(11) NOT NULL,
+      PRIMARY KEY (`sceneryID`, `seasonID`) 
+      );
+    </item>
+
+    <item name="outerKeyCreate">
+      ALTER TABLE `scenery` ADD CONSTRAINT `scenery-type` FOREIGN KEY (`sceneryID`) REFERENCES `typeRelation` (`sceneryID`);
+      ALTER TABLE `sceneryType` ADD CONSTRAINT `type-relation` FOREIGN KEY (`typeID`) REFERENCES `typeRelation` (`typeID`);
+      ALTER TABLE `scenery` ADD CONSTRAINT `scenery-images` FOREIGN KEY (`sceneryID`) REFERENCES `sceneryImages` (`sceneryID`);
+      ALTER TABLE `scenery` ADD CONSTRAINT `scenery-season` FOREIGN KEY (`sceneryID`) REFERENCES `fitSeason` (`sceneryID`);
+      ALTER TABLE `season` ADD CONSTRAINT `season-fit` FOREIGN KEY (`seasonID`) REFERENCES `fitSeason` (`seasonID`);
+    </item>
+  </string-array>
+
+  <string-array name="destroySql">
+    <item>
+        DROP TABLE IF EXISTS typeRelation;
+    </item>
+    <item>
+        DROP TABLE IF EXISTS fitSeason;
+    </item>
+    <item>
+        DROP TABLE IF EXISTS season;
+    </item>
+    <item>
+        DROP TABLE IF EXISTS sceneryType;
+    </item>
+    <item>
+        DROP TABLE IF EXISTS scenery;
+    </item>
+  </string-array>
+
+  <string-array name="dataCleanSql">
+    <item>
+        DELETE FROM typeRelation;
+    </item>
+    <item>
+        DELETE FROM fitSeason;
+    </item>
+    <item>
+        DELETE FROM season;
+    </item>
+    <item>
+        DELETE FROM sceneryType;
+    </item>
+    <item>
+        DELETE FROM scenery;
+    </item>
+  </string-array>
+
+</resources>
