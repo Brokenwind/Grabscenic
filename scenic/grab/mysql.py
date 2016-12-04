@@ -7,6 +7,11 @@ import sys
 sys.path.append("..")
 from log import Logger
 
+default_encoding = 'utf-8'
+if sys.getdefaultencoding() != default_encoding:
+    reload(sys)
+    sys.setdefaultencoding(default_encoding)
+
 class MySQL:
     # the mysql error code
     error_code = ''

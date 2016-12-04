@@ -4,11 +4,16 @@
 from search import SearchParams
 from mysql import MySQL
 from bs4 import BeautifulSoup
+from scenic import Scenic
 import uuid
 import sys
 sys.path.append("..")
 from log import Logger
-from grab.scenic import Scenic
+
+default_encoding = 'utf-8'
+if sys.getdefaultencoding() != default_encoding:
+    reload(sys)
+    sys.setdefaultencoding(default_encoding)
 
 class Tables:
     """Create or Drop tables,delete data from tables
@@ -18,7 +23,7 @@ class Tables:
         try:
             fsock = open("sqls.xml", "r")
         except IOError:
-            print "The file don't exist, Please double check!"
+            self._logger.error("The file don't exist, Please double check!")
         self.sqls = BeautifulSoup(fsock.read())
         dbconfig = {'host':'127.0.0.1', 
                 'port': 3306, 
@@ -78,7 +83,7 @@ class Tables:
         """
         insert = self.sqls.find(id="insertSql").find(id=name).string
         if insert:
-            self._logger.info("insert into table "+name)
+            self._logger.info(insert + " insert into table "+name)
             self.db.insert(insert,params)
         else:
             self._logger.error("did not find the table "+name+" when insert")
@@ -90,21 +95,25 @@ class Tables:
         # Return:
         """
         if isinstance(data,Scenic):
-            sceneryParams = (data.id,data.name,data.province,data.city,data.area,data.level,data.quality,data.description,data.website,data.symbol,None,None,self.price)
+            data.encode()
+            search = SearchParams()
+            sceneryParams = (data.id,data.name,data.province,data.city,data.area,data.level,data.quality,data.description,data.website,data.symbol,None,None,data.price)
             imageParams = []
             for item in data.images:
-                imageParams.append((data.id,str(uuid.uuid1()),data.item,data.name,data.name,None))
+                imageParams.append( (data.id,str(uuid.uuid1()),item,data.name,data.name) )
             typesParams = []
             for item in data.types:
-                typesParams.append((data.id,SearchParams.scenicType[item]))
+                typesParams.append((data.id,search.scenicType[item]))
             fitsParams = []
             for item in data.fits:
-                fitsParams.append((data.id,SearchParams.scenicFit[item]))
+                fitsParams.append((data.id,search.scenicFit[item]))
             
-            tables.insertTable("scenery",sceneryParams)
-            tables.insertTable("sceneryImages",imageParams)
-            tables.insertTable("typeRelation",typesParams)
-            tables.insertTable("fitSeason",fitsParams)
+            self.insertTable("scenery",sceneryParams)
+            # insert into database when only there are pictures,or it will occur error
+            if imageParams:
+                self.insertTable("sceneryImages",imageParams)
+            self.insertTable("typeRelation",typesParams)
+            self.insertTable("fitSeason",fitsParams)
         else:
             self._logger.error("the parameter is not the instance of Scenic")
             return False
@@ -132,7 +141,7 @@ if __name__ == "__main__":
     tables.initTables()
     #tables.insertTable("season",(0,"all"))
     #tables.insertTable("sceneryType",(0,"all","all kinds of types"))
-    #tables.insertTable("scenery",("xihuID3","xihu","zhejiang","hangzhou",None,"5A","","","","","","",None))
+    #tables.insertTable("scenery",("xihuID3","xihu","zhejiang","hangzhou",None,"5A","","","","","",""))
     #tables.insertTable("fitSeason",("xihuID",501))
     #tables.insertTable("typeRelation",("xihuID",0))
     #tables.insertTable("sceneryImages",("xihuID",0,"www.baidu.com","xihu","nice","2016-03-12"))

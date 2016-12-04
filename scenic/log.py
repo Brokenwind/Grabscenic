@@ -32,13 +32,13 @@ class Logger(object):
     def info(self,message):
         self.logger.info(message)
 
-    def war(self,message):
+    def warn(self,message):
         self.logger.warn(message)
 
     def error(self,message):
         self.logger.error(message)
 
-    def cri(self,message):
+    def crit(self,message):
         self.logger.critical(message)
 
 if __name__ =='__main__':

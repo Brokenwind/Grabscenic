@@ -5,13 +5,25 @@ import re
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from pandas import DataFrame,Series
+from scenic import Scenic
+from tables import Tables
+import sys
+sys.path.append("..")
+from log import Logger
+
+default_encoding = 'utf-8'
+if sys.getdefaultencoding() != default_encoding:
+    reload(sys)
+    sys.setdefaultencoding(default_encoding)
 
 class Grab:
     def __init__(self):
+        self._logger = Logger(__file__)
         # the entry point of grabing 
         self.base="http://scenic.cthy.com"
         self.provinces = DataFrame()
         self.browser = webdriver.PhantomJS()
+        self.tabopera = Tables();
     def getProvinces(self):
         '''Get the information of link, area and the number of provinces.
         # Process:
@@ -33,7 +45,7 @@ class Grab:
             index = []
             # the pattern to extract number from link
             pattern = re.compile(r".*(\d\d)/")
-            print ("got the the tag containing the information of provinces")
+            self._logger.info("got the the tag containing the information of provinces")
             for item in map.find_all("area"):
                 mapattrs={}
                 mapattrs["link"]=item.attrs["href"]
@@ -45,10 +57,14 @@ class Grab:
                     continue
                 protemp.append(mapattrs)
         else:
-            print ("sorry,did not get the map data")
+            self._logger.info("sorry,did not get the map data")
             return None
         self.provinces = DataFrame(protemp,index=index)
-        return self.provinces
+        #for item in self.provinces.keys():
+        for item in self.provinces.index:
+            self.searchScenic(item)
+        #return self.provinces
+
     def searchScenic(self,num):
         """Extract scenics information of a spicified province.
         # Parameters:
@@ -72,14 +88,12 @@ class Grab:
         if tags:
             pageCount = int(tags[1].string)
             #print self.provinces.ix[str(num)]+"\ntotal: "+tags[0].string+" records.\n"+"total "+tags[1].string+" pages"
-            print "total: "+tags[0].string+" records.\n"+"total "+tags[1].string+" pages"
+            self._logger.info("total: "+tags[0].string+" records.\n"+"total "+tags[1].string+" pages")
         else:
             return False
-        """
+
         for i in range(1,pageCount+1):
-            searchSeniceSpiPage(str(num),str(page))
-        """
-        self.searchSeniceSpiPage(str(num),str(1))
+            self.searchSeniceSpiPage(str(num),str(i))
         return True
 
     def searchSeniceSpiPage(self,num,page):
@@ -96,7 +110,7 @@ class Grab:
         link = ""
         if sightTags:
             for item in sightTags:
-                print "got the link of "+item.string
+                self._logger.info("got the link of "+item.string)
                 link = item.attrs["href"]
                 self.extractScenicInfor(link)
         else:
@@ -110,7 +124,7 @@ class Grab:
 
         # Return:
         """
-        self.extractScenicAbout(link)
+        self.tabopera.insertData(self.extractScenicAbout(link))
 
     def extractScenicAbout(self,link):
         """Extract the information of introduction,geographic postion,type,quality,class 
@@ -127,7 +141,18 @@ class Grab:
         description:
         images:
         """
-        scenic = {}
+        scenic = Scenic()
+        # got the symbol picture and the name of scenic at index page
+        self.browser.get(link)
+        first = BeautifulSoup(self.browser.page_source)
+        symbol = first.find(class_="sightfocuspic").find("img")
+        if symbol:
+            scenic.symbol = self.base+symbol.attrs["src"]
+        scename = first.find(class_="sightprofile").find("h4")
+        if scename:
+            scenic.name = scename.string
+
+        # get detailed information about scenic at about page
         addr = link+"about.html"
         self.browser.get(addr)
         about = BeautifulSoup(self.browser.page_source)
@@ -137,50 +162,52 @@ class Grab:
             pos = relative[0].select("a")
             # It will only be right when we got two extract two infor
             if len(pos) == 2:
-                scenic["province"] = pos[0].string
-                scenic["city"] = pos[1].string
+                if pos[0].string:
+                    scenic.province = pos[0].string
+                if pos[1].string:
+                    scenic.city = pos[1].string
             else:
                 return None
             # get the type of scenic
-            types = []
             for item in relative[1].select("a"):
-                types.append(item.string)
-            scenic["types"] = types
+                if item.string:
+                    scenic.types.append(item.string)
             # get the quality of scenic
-            scenic["quality"] = relative[2].find("a").string
+            qua = relative[2].find("a").string
+            if qua:
+                scenic.quality = qua
             # get the scenic level
-            scenic["level"] = relative[3].find("a").string
+            lev = relative[3].find("a").string
+            if lev:
+                scenic.level = lev
             # get the fit time of the scenic
-            fits = []
             for item in relative[4].select("a"):
-                fits.append(item.string)
-            scenic["fits"] = fits
+                if item.string:
+                    scenic.fits.append(item.string)
         else:
-            print "there is not ralative information"+str(len(relative))
+            self._logger.error("there is not ralative information"+str(len(relative)))
             return None
         # get the description of the scenic
         desc = about.find(id="AboutInfo")
-        descText = ""
-        descImg = []
+
         """
         for item in about.find("br"):
             item.replace_with("\n")
         """
         for s in desc.stripped_strings:
-            descText = descText + s
+            scenic.description = scenic.description + s
         for item in desc.find_all("p"):
             # if a tag p contains image address,it always has the style or align attr
             attrs = item.attrs
             if "style" in attrs.keys() or "align" in attrs.keys():
                 for img in item.find_all("img"):
-                    descImg.append(self.base+img.attrs["src"])
+                    scenic.images.append(self.base+img.attrs["src"])
             else:
                 for s in item.stripped_strings:
-                    descText = descText + "\n" + s
-
-        scenic["description"] = descText
-        scenic["images"]=descImg
-
+                    scenic.description = scenic.description + "\n" + s
+        if not scenic.description:
+            scenic.description = ""
+        scenic.website = link
         return scenic
 
     def extractScenicAttractions(self,link):
@@ -199,4 +226,11 @@ class Grab:
 
 if __name__ == "__main__":
     grab = Grab()
-    print grab.extractScenicAbout("http://scenic.cthy.com/scenic-10046/")
+    grab.getProvinces()
+
+    #grab.searchScenic(33)
+    """
+    result = grab.extractScenicAbout("http://scenic.cthy.com/scenic-10046/")
+    print result.symbol
+    print result.name
+    """
