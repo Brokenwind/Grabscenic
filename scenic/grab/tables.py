@@ -83,7 +83,7 @@ class Tables:
         """
         insert = self.sqls.find(id="insertSql").find(id=name).string
         if insert:
-            self._logger.info(insert + " insert into table "+name)
+            self._logger.info(" insert into table "+name)
             self.db.insert(insert,params)
         else:
             self._logger.error("did not find the table "+name+" when insert")

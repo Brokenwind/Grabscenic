@@ -32,19 +32,21 @@ class Scenic:
         return "id "+self.id+"\nprovince"+self.province+"\ncity "+self.city+"\ntypes "+str(self.types)+"\nquality "+self.quality+"\nfits "+str(self.fits)+"\ndescription "+self.description+"\nimages "+str(self.images)
 
     def encode(self):
-        self.name = self.name.encode("UTF-8")
-        self.province = self.province.encode("UTF-8")
-        self.city = self.city.encode("UTF-8")
-        self.area = self.area.encode("UTF-8")
+        """If attributes is None and than given a empty string,or it will ben ecncode into utf-8
+        """
+        self.name = self.name and self.name.encode("UTF-8") or ""
+        self.province = self.province and self.province.encode("UTF-8") or ""
+        self.city = self.city and self.city.encode("UTF-8") or ""
+        self.area = self.area and self.area.encode("UTF-8") or ""
         for i in range(0,len(self.types)):
             self.types[i] = self.types[i].encode("UTF-8")
-        self.level = self.level.encode("UTF-8")
-        self.quality = self.quality.encode("UTF-8")
+        self.level = self.level and self.level.encode("UTF-8") or ""
+        self.quality = self.quality and self.quality.encode("UTF-8") or ""
         for i in range(0,len(self.fits)):
             self.fits[i] = self.fits[i].encode("UTF-8")
-        self.description = self.description.encode("UTF-8")
-        self.website = self.website.encode("UTF-8")
-        self.symbol = self.symbol.encode("UTF-8")
+        self.description = self.description and self.description.encode("UTF-8") or ""
+        self.website = self.website and self.website.encode("UTF-8") or ""
+        self.symbol = self.symbol and self.symbol.encode("UTF-8") or ""
         for i in range(0,len(self.images)):
             self.images[i] = self.images[i].encode("UTF-8")
 

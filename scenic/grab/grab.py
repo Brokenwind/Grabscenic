@@ -84,11 +84,14 @@ class Grab:
         # the number of records of one page
         <span class="f14 point">10</span>]
         """
-        tags = first.find(id="PagerList").select("li > span")
-        if tags:
+        palist = first.find(id="PagerList")
+        if palist:
+            tags = palist.select("li > span")
+        else:
+            return False
+        if tags and len(tags) >= 2:
             pageCount = int(tags[1].string)
-            #print self.provinces.ix[str(num)]+"\ntotal: "+tags[0].string+" records.\n"+"total "+tags[1].string+" pages"
-            self._logger.info("total: "+tags[0].string+" records.\n"+"total "+tags[1].string+" pages")
+            self._logger.info("total: "+tags[0].string+" records. "+"total "+tags[1].string+" pages")
         else:
             return False
 
@@ -145,13 +148,17 @@ class Grab:
         # got the symbol picture and the name of scenic at index page
         self.browser.get(link)
         first = BeautifulSoup(self.browser.page_source)
-        symbol = first.find(class_="sightfocuspic").find("img")
+        symbol = first.select("div.sightfocuspic > img")
         if symbol:
-            scenic.symbol = self.base+symbol.attrs["src"]
-        scename = first.find(class_="sightprofile").find("h4")
+            scenic.symbol = symbol[0].attrs["src"] and self.base+symbol[0].attrs["src"] or ""
+        scename = first.select("div.sightprofile > h4")
         if scename:
-            scenic.name = scename.string
+            scenic.name = scename[0].string
 
+        # if canot get the scenic name,it means the pages is wrong
+        else:
+            self._logger.error("Cannot got the scenic name. Is the page is wrong,please check it")
+            return None
         # get detailed information about scenic at about page
         addr = link+"about.html"
         self.browser.get(addr)
@@ -166,6 +173,7 @@ class Grab:
                     scenic.province = pos[0].string
                 if pos[1].string:
                     scenic.city = pos[1].string
+                self._logger.info("current position: province: "+scenic.province+" city: "+scenic.city)
             else:
                 return None
             # get the type of scenic
@@ -173,13 +181,13 @@ class Grab:
                 if item.string:
                     scenic.types.append(item.string)
             # get the quality of scenic
-            qua = relative[2].find("a").string
+            qua = relative[2].find("a")
             if qua:
-                scenic.quality = qua
+                scenic.quality = qua.string
             # get the scenic level
-            lev = relative[3].find("a").string
+            lev = relative[3].find("a")
             if lev:
-                scenic.level = lev
+                scenic.level = lev.string
             # get the fit time of the scenic
             for item in relative[4].select("a"):
                 if item.string:
@@ -187,27 +195,27 @@ class Grab:
         else:
             self._logger.error("there is not ralative information"+str(len(relative)))
             return None
+
         # get the description of the scenic
         desc = about.find(id="AboutInfo")
-
-        """
-        for item in about.find("br"):
-            item.replace_with("\n")
-        """
-        for s in desc.stripped_strings:
-            scenic.description = scenic.description + s
-        for item in desc.find_all("p"):
-            # if a tag p contains image address,it always has the style or align attr
-            attrs = item.attrs
-            if "style" in attrs.keys() or "align" in attrs.keys():
-                for img in item.find_all("img"):
-                    scenic.images.append(self.base+img.attrs["src"])
-            else:
-                for s in item.stripped_strings:
-                    scenic.description = scenic.description + "\n" + s
-        if not scenic.description:
-            scenic.description = ""
+        if desc:
+            for s in desc.stripped_strings:
+                scenic.description = scenic.description + s
+            for item in desc.find_all("p"):
+                # if a tag p contains image address,it always has the style or align attr
+                attrs = item.attrs
+                if "style" in attrs.keys() or "align" in attrs.keys():
+                    for img in item.find_all("img"):
+                        if not img.attrs["src"]:
+                            continue
+                        scenic.images.append(self.base+img.attrs["src"])
+                else:
+                    for s in item.stripped_strings:
+                        scenic.description = scenic.description + "\n" + s
+        else:
+            self._logger.info("there is no description information and scenic pictures")
         scenic.website = link
+
         return scenic
 
     def extractScenicAttractions(self,link):
