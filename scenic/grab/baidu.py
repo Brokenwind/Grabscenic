@@ -22,22 +22,25 @@ if sys.getdefaultencoding() != default_encoding:
     reload(sys)
     sys.setdefaultencoding(default_encoding)
 
-class Search:
+class Baidu:
     def __init__(self):
         self._logger = Logger(__file__)
         # baidu search website
         self.baidu="https://www.baidu.com"
-        self.browser = webdriver.PhantomJS()
+        self.browser = webdriver.Firefox()
 
     def __del__(self):
         self.browser.quit()
 
-    def baike(self,params):
-        """extract information from baidu baike
+    def search(self,params,suffix):
+        """search the keywords and return the first item link
+        # Parameter:
+        params:
+        suffix:
+        # Return:
+        the link of the first item
         """
-        
         # arrange the parameter to str
-        suffix = " 百度百科"
         paramstr = ""
         if isinstance(params,dict):
             for item in params.keys():
@@ -52,32 +55,42 @@ class Search:
         paramstr = paramstr + suffix
         # begin searching
         self.browser.get(self.baidu)
-        search = self.browser.find_element_by_name("wd")
-        search.send_keys(paramstr.decode())
-        search.send_keys(Keys.RETURN)
+        searinput = self.browser.find_element_by_name("wd")
+        searinput.send_keys(paramstr.decode())
+        searinput.send_keys(Keys.RETURN)
         # get the first one from search result
+        link = ""
         try:
-            # get result list
+            # get the first of result list
             WebDriverWait(self.browser, 5).until(
                 EC.presence_of_element_located((By.XPATH, "//div[@id='wrapper_wrapper']/div[@id='container']/div[@id='content_left']/div[@id='1']"))
             )
             first = self.browser.find_element_by_xpath("//div[@id='wrapper_wrapper']/div[@id='container']/div[@id='content_left']/div[@id='1']")
             # get first item of list
             firstlink = first.find_element_by_xpath("//h3/a")
+            link = firstlink.get_attribute("href")
             self._logger.info("the title of the first item of list is: "+firstlink.text)
+            # this is the visible link at the bottom of at every retult item
             firsturl = first.find_element_by_xpath("//p[@class=' op-bk-polysemy-move']/span[@class='c-showurl']")
             self._logger.info("the link of the first item of list is: "+firsturl.text)
-            # enter the first item
-            """
-            if use the following statement:
-            firstlink.click()
-            the browser will open a new window to show information,but the self.browser is still keep the old url. So you can not get the new page information.
-            """
-            self.browser.get(firstlink.get_attribute("href"))
         except Exception,e:
-            self._logger.error(e.args)
+            self._logger.error("search: error happend when got the search result "+str(e.args))
             return None
+        return link
 
+    def baike(self,params):
+        """extract information from baidu baike
+        """
+        suffix = " 百度百科"
+        link = self.search(params,suffix)
+        if not link:
+            return None
+        """
+        if use the following statement:
+        firstlink.click()
+        the browser will open a new window to show information,but the self.browser is still keep the old url. So you can not get the new page information.
+        """
+        self.browser.get(link)
         # extract Baike contents,after entering the first item  
         result = {}        
         try:
@@ -88,10 +101,11 @@ class Search:
             )
             # this tag contains all the information of the searching item
             content = self.browser.find_element_by_class_name("main-content")
+            # get the real name,the name you are searching maybe is incorrect
+            result["name"] = content.find_element_by_xpath("//dl/dd/h1").text
             self._logger.info("got the content div")
             # get summary of the searching item
-            sumdiv = content.find_element_by_class_name("lemma-summary")
-            result["summary"] = sumdiv.text
+            result["summary"] = content.find_element_by_class_name("lemma-summary").text
             self._logger.info("got the summary div")
             # left and right basic information
             basicLeft = content.find_element_by_class_name("basicInfo-left")
@@ -132,7 +146,43 @@ class Search:
             result["detail"] = detail
             result["pictures"] = pictures
         except Exception,e:
-            self._logger.error("errors occurred when extracting Baike contents: "+e.args)
+            self._logger.error("errors occurred when extracting Baike contents: "+str(e.args))
+            return None
         return result
-search = Search()
-search.baike("珏山旅游风景区")
+
+    def image(self,params,num=10,width=400,height=400):
+        """Get images from baidu
+        # Parameters:
+        num: the number of pictures you want to get
+        width: the minimal width of picture
+        height: the minimal height of picture
+        # Return:
+        a list of map address
+        """
+        suffix = " 图片"
+        link = self.search(params,suffix)
+        if not link:
+            return None
+        self.browser.get(link)
+        result = []
+        try:
+            pages = self.browser.find_elements_by_xpath("//div[@id='imgid']/div[@class='imgpage']/ul")
+            #firstpage = self.browser.find_element_by_xpath("//div[@id='imgid']/div[@class='imgpage']/ul")
+            self._logger.info("got image gallery,it is grabing...")
+            for page in pages:
+                for item in page.find_elements_by_tag_name("li"):
+                    if len(result) >= num:
+                        self._logger.info("finally,we got "+str(len(result))+" pictures")
+                        return result
+                    wid = int(item.get_attribute("data-width"))
+                    hei = int(item.get_attribute("data-height"))
+                    if wid >= width and hei >= height:
+                        result.append(item.get_attribute("data-objurl"))
+            self._logger.info("sorry,we did not grab enough "+str(num)+" pictures,just "+str(len(result))+" pictures")
+            return result
+        except Exception,e:
+            self._logger.error("errors occurred when extracting images contents: "+str(e.args))
+
+if __name__ == "__main__":
+    search = Search()
+    search.image("珏山旅游风景区",10)
