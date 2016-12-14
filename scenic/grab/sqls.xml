@@ -2,23 +2,6 @@
 <resources>
   <string-array id="createSql">
 
-    <item id="season">
-      CREATE TABLE `season` (
-      `seasonID` int(11) NOT NULL,
-      `seasonName` varchar(255) NULL,
-      PRIMARY KEY (`seasonID`) 
-      );
-    </item>
-
-    <item id="sceneryType">
-      CREATE TABLE `sceneryType` (
-      `typeID` int(11) NOT NULL,
-      `name` varchar(255) NULL,
-      `description` varchar(255) NULL,
-      PRIMARY KEY (`typeID`) 
-      );
-    </item>
-
     <item id="scenery">
       CREATE TABLE `scenery` (
       `sceneryID` varchar(255) NOT NULL,
@@ -28,21 +11,20 @@
       `area` varchar(255) NULL,
       `level` varchar(255) NULL,
       `quality` varchar(255) NULL,
-      `description` text NULL,
+      `description` MEDIUMTEXT NULL,
       `website` varchar(512) NULL,
       `symbolImage` varchar(512) NULL,
       `openTime` varchar(255) NULL,
       `closeTime` varchar(255) NULL,
-      `price` decimal(11,2) NULL,
+      `price` varchar(255) NULL,
+      `suggest` varchar(255) NULL,
+      `season` varchar(255) NULL,
+      `type` varchar(255) NULL,
+      `longitude` decimal(18,13)  NULL,
+      `latitude` decimal(18,13) NULL,
+      `precise` integer NULL,
+      `confidence` integer NULL,
       PRIMARY KEY (`sceneryID`) 
-      );
-    </item>
-
-    <item id="typeRelation">
-      CREATE TABLE `typeRelation` (
-      `sceneryID` varchar(255) NOT NULL,
-      `typeID` int(11) NOT NULL,
-      PRIMARY KEY (`sceneryID`, `typeID`) 
       );
     </item>
 
@@ -57,36 +39,12 @@
       );
     </item>
 
-    <item id="fitSeason">
-      CREATE TABLE `fitSeason` (
-      `sceneryID` varchar(255) NOT NULL,
-      `seasonID` int(11) NOT NULL,
-      PRIMARY KEY (`sceneryID`, `seasonID`) 
-      );
-    </item>
-
     <item id="outerKey">
-      ALTER TABLE `typeRelation` ADD CONSTRAINT `relation-type` FOREIGN KEY (`typeID`) REFERENCES `sceneryType` (`typeID`);
-      ALTER TABLE `typeRelation` ADD CONSTRAINT `ralation-scenery` FOREIGN KEY (`sceneryID`) REFERENCES `scenery` (`sceneryID`);
-      ALTER TABLE `fitSeason` ADD CONSTRAINT `fit-season` FOREIGN KEY (`seasonID`) REFERENCES `season` (`seasonID`);
-      ALTER TABLE `fitSeason` ADD CONSTRAINT `fit-scenery` FOREIGN KEY (`sceneryID`) REFERENCES `scenery` (`sceneryID`);
       ALTER TABLE `sceneryImages` ADD CONSTRAINT `images-scenery` FOREIGN KEY (`sceneryID`) REFERENCES `scenery` (`sceneryID`);
     </item>
   </string-array>
 
   <string-array id="dropSql">
-    <item id="typeRelation">
-        DROP TABLE IF EXISTS typeRelation;
-    </item>
-    <item id="sceneryType">
-        DROP TABLE IF EXISTS sceneryType;
-    </item>
-    <item id="fitSeason">
-        DROP TABLE IF EXISTS fitSeason;
-    </item>
-    <item id="season">
-        DROP TABLE IF EXISTS season;
-    </item>
     <item id="sceneryImages">
         DROP TABLE IF EXISTS sceneryImages;
     </item>
@@ -96,18 +54,6 @@
   </string-array>
 
   <string-array id="cleanSql">
-    <item id="typeRelation">
-        DELETE FROM typeRelation;
-    </item>
-    <item id="sceneryType">
-        DELETE FROM sceneryType;
-    </item>
-    <item id="fitSeason">
-        DELETE FROM fitSeason;
-    </item>
-    <item id="season">
-        DELETE FROM season;
-    </item>
     <item id="sceneryImages">
         DELETE FROM sceneryImages;
     </item>
@@ -117,23 +63,11 @@
   </string-array>
 
   <string-array id="insertSql">
-    <item id="typeRelation">
-      INSERT INTO typeRelation(sceneryID,typeID) VALUES(%s,%s)
-    </item>
-    <item id="sceneryType">
-      INSERT INTO sceneryType(typeID,name,description) VALUES(%s,%s,%s)
-    </item>
-    <item id="fitSeason">
-      INSERT INTO fitSeason(sceneryID,seasonID) VALUES(%s,%s)
-    </item>
-    <item id="season">
-      INSERT INTO season(seasonID,seasonName) VALUES(%s,%s)
-    </item>
     <item id="sceneryImages">
       INSERT INTO sceneryImages(sceneryID,imageID,imageUrl,imageName,imageDesc) VALUES (%s,%s,%s,%s,%s)
     </item>
     <item id="scenery">
-      INSERT INTO scenery(sceneryID,name,province,city,area,level,quality,description,website,symbolImage,openTime,closeTime,price) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+      INSERT INTO scenery(sceneryID,name,province,city,area,level,quality,description,website,symbolImage,openTime,closeTime,price,suggest,season,type,longitude,latitude,precise,confidence) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
     </item>
   </string-array>
 

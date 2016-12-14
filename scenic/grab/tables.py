@@ -96,28 +96,32 @@ class Tables:
         """
         if isinstance(data,Scenic):
             data.encode()
-            search = SearchParams()
-            sceneryParams = (data.id,data.name,data.province,data.city,data.area,data.level,data.quality,data.description,data.website,data.symbol,None,None,data.price)
+            types = self.joint(data.types)
+            seasons = self.joint(data.fits)
+            sceneryParams = (data.id,data.name,data.province,data.city,data.area,data.level,data.quality,data.description,data.website,data.symbol,data.opentime,data.closetime,data.price,data.suggest,seasons,types,data.longitude,data.latitude,data.precise,data.confidence)
             imageParams = []
             for item in data.images:
                 imageParams.append( (data.id,str(uuid.uuid1()),item,data.name,data.name) )
-            typesParams = []
-            for item in data.types:
-                typesParams.append((data.id,search.scenicType[item]))
-            fitsParams = []
-            for item in data.fits:
-                fitsParams.append((data.id,search.scenicFit[item]))
-            
             self.insertTable("scenery",sceneryParams)
             # insert into database when only there are pictures,or it will occur error
             if imageParams:
                 self.insertTable("sceneryImages",imageParams)
-            self.insertTable("typeRelation",typesParams)
-            self.insertTable("fitSeason",fitsParams)
         else:
             self._logger.error("the parameter is not the instance of Scenic")
             return False
 
+    def joint(self,data,split=","):
+        """Joint list with split parameter,default is ,
+        """
+        result = ""
+        if isinstance(data,list):
+            length = len(data)
+            if length > 0:
+                result = result+data[0]
+                for i in range(1,length):
+                    result = result+split+data[i]
+        return result
+                
     def initTables(self):
         """Initial basic tables including sceneryType,season
         """
@@ -138,7 +142,7 @@ if __name__ == "__main__":
     tables.dropAll()    
     tables.initDB()
     tables.cleanAll()
-    tables.initTables()
+    #tables.initTables()
     #tables.insertTable("season",(0,"all"))
     #tables.insertTable("sceneryType",(0,"all","all kinds of types"))
     #tables.insertTable("scenery",("xihuID3","xihu","zhejiang","hangzhou",None,"5A","","","","","",""))
