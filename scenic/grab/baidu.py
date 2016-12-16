@@ -23,7 +23,7 @@ if sys.getdefaultencoding() != default_encoding:
     sys.setdefaultencoding(default_encoding)
 
 class Baidu:
-    def __init__(self):
+    def __init__(self,browser):
         self._logger = Logger(__file__)
         # baidu search website
         self.baidu="https://www.baidu.com"
@@ -33,8 +33,10 @@ class Baidu:
         #cap["phantomjs.page.settings.userAgent"] = "Mozilla/5.0 (X11; Linux x86_64; rv:50.0) Gecko/20100101 Firefox/50.0"
         #self.browser = webdriver.PhantomJS(desired_capabilities=cap)
         #self.browser = webdriver.PhantomJS()
-
-        self.browser = webdriver.Firefox()
+        if not browser:
+            self.browser = webdriver.Firefox()
+        else:
+            self.browser = browser
 
     def __del__(self):
         self.browser.quit()

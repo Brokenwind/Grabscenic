@@ -34,7 +34,7 @@ class Grab:
         self.spage = 1
         self.snum = 0
         self.picturenum = 10
-        self.baidu = Baidu()
+        self.baidu = Baidu(self._browser)
         self.map = BaiduMap()
         self.ak = "sh0wDYRg1LnB5OYTefZcuHu3zwuoFeOy"
     def __del__(self):

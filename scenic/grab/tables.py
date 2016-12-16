@@ -44,6 +44,16 @@ class Tables:
         # must reopen the cursor, or it will raise exception with error code 1024. What a fucking error
         self.db.reopenCursor()
 
+    def createTable(self,name):
+        """create a specified table
+        """
+        create = self.sqls.find(id="createSql").find(id=name).string
+        if create:
+            self._logger.info(" create table "+name)
+            self.db.execute(create)
+        else:
+            self._logger.error("error occured when create table "+name)
+        
     def dropAll(self):
         """drop all the tables
         """
@@ -121,6 +131,7 @@ class Tables:
                 for i in range(1,length):
                     result = result+split+data[i]
         return result
+
                 
     def initTables(self):
         """Initial basic tables including sceneryType,season

@@ -6,8 +6,11 @@ __author__ = "Brokenwind"
 import numpy
 import re
 import sys
+import os
 import urllib2
 import json
+from IPy import IP
+from tables import Tables
 from decimal import *
 # import Logger
 sys.path.append("..")
@@ -34,6 +37,19 @@ class BaiduMap:
         self.geoprefix = "http://api.map.baidu.com/geocoder/v2/?address="
         self.revprefix = "http://api.map.baidu.com/geocoder/v2/?location="
         self.suffix = "&output=json&ak="
+        self.headers = {}
+        self.headers["User-Agent"]="Mozilla/5.0 (X11; Linux x86_64; rv:45.0) Gecko/20100101 Firefox/45.0"
+
+    def access(self,url):
+        """get Json object from specified url
+        """
+        try:
+            req = urllib2.Request(url,headers=self.headers)
+            response = urllib2.urlopen(req)
+            return json.loads(response.read())
+        except Exception,e:
+            self._logger.error("error occured when get geo data")
+            return None
 
     def getGeoAddress(self,position,ak):
         """get the longitude and latitude
@@ -49,10 +65,8 @@ class BaiduMap:
         url = self.geoprefix + position + self.suffix + ak
         result = None
         try:
-            response = urllib2.urlopen(url)
-            data = json.loads(response.read())
             #data = json.loads('{"status":103,"result":{"location":{"lng":123.9872889421725,"lat":47.34769981336638},"precise":0,"confidence":10,"level":"城市"}}')
-            self._logger.info("get address: "+str(data))
+            data = self.access(url)
             if not data:
                 return None
             if "status" in data.keys():
@@ -78,9 +92,8 @@ class BaiduMap:
             else:
                 self._logger.warn("the response data do not have attr status")
                 return None
-
         except Exception,e:
-            self._logger.error("error occured when get geo data")
+            self._logger.error("error occured when when extract information from json object")
             return None
     
     def reverseGeoAddress(self,lng,lat,pois,ak):
@@ -122,9 +135,7 @@ class BaiduMap:
         print url
         result = None
         try:
-            response = urllib2.urlopen(url)
-            data = json.loads(response.read())
-            self._logger.info("get data: "+str(data))
+            data = self.access(url)
             if not data:
                 return None
             if "status" in data.keys():
@@ -150,12 +161,78 @@ class BaiduMap:
             else:
                 self._logger.warn("the response data do not have attr status")
                 return None
-
         except Exception,e:
             self._logger.error("error occured when to reverse the geo data")
             return None
 
+    def ipLocation(self,ip,ak):
+        url = "http://api.map.baidu.com/location/ip?ip="+ip+"&ak="+ak+"&coor=bd09ll "
+        data = self.access(url)
+        if not data:
+           return None
+        if "status" in data.keys():
+            state = data["status"]
+            if state == 0:
+                return data
+            elif state == 1:
+                self._logger.warn("did not got the address of ip: "+ip)
+                return None
+            elif state > 1:
+                self._logger.error("can not still access the service. status code: "+str(state))
+                #os._exit(0)
+                return None
+
+    def getAllIpAddress(self):
+        table = Tables()
+        table.createTable("ipAddress")
+        iplines = []
+        try:
+            ipfile = open("chinaiplist.txt")
+            iplines = ipfile.readlines()
+        except Exception,e:
+            self._logger.error("error occured when open file")
+            return None
+        
+        # get iprecord from file
+        linenum = 0
+        ipindex = 0
+        iprecord = open("iprecord.txt","a+")
+        content = iprecord.readlines()
+        if len(content) != 0:
+            line = content[len(content)-1]
+            strs = line.split(" ")
+            linenum = int(strs[0])
+            ipindex = int(strs[1])
+
+        for i in range(linenum,len(iplines)):
+            ips = IP(iplines[i])
+            if ips:
+                for j in range(ipindex,len(ips)):
+                    ip = ips[j]
+                    data = search.ipLocation(str(ip),"sh0wDYRg1LnB5OYTefZcuHu3zwuoFeOy")
+                    if data:
+                        try:
+                            if "address" in data.keys() and  "content" in data.keys():
+                                detail = data["content"]["address_detail"]
+                                point = data["content"]["point"]
+                                params = (str(ip),data["address"],detail["province"],detail["city"],detail["district"],detail["street"],detail["street_number"],point["x"],point["y"])
+                                table.insertTable("ipAddress",params)
+                                iprecord.write(str(i)+" "+str(j)+"\n")
+                            else:
+                                self._logger.warn("did not get result of ip:"+ip)
+                        except Exception,e:
+                            self._logger.error("error occured when extract information from json object")
+                            continue
+            else:
+                self._logger.warn("no ip got from ip segment: "+iplines[i])
+
+        """
+        """
 if __name__ == "__main__":
     search = BaiduMap()
-    print "%.13f" % search.getGeoAddress("齐齐哈尔铁农园艺","sh0wDYRg1LnB5OYTefZcuHu3zwuoFeOy")["location"]["lng"]
+    #print "%.13f" % search.getGeoAddress("齐齐哈尔铁农园艺","sh0wDYRg1LnB5OYTefZcuHu3zwuoFeOy")["location"]["lng"]
+    #print search.getGeoAddress("齐齐哈尔铁农园艺","sh0wDYRg1LnB5OYTefZcuHu3zwuoFeOy")
     #print search.reverseGeoAddress("47.34769981336638","123.9872889421725",1,"sh0wDYRg1LnB5OYTefZcuHu3zwuoFeOy")["formatted_address"]
+    #print search.ipLocation("221.12.59.211","sh0wDYRg1LnB5OYTefZcuHu3zwuoFeOy")
+    search.getAllIpAddress()
+
